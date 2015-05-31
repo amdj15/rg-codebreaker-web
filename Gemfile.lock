@@ -1,0 +1,17 @@
+GIT
+  remote: https://github.com/amdj15/rg-codebreaker
+  revision: 324b9567be1c322bd85c451e6d2504b3501fdf8c
+  specs:
+    codebreaker (0.2.1)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    rack (1.6.1)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  codebreaker!
+  rack

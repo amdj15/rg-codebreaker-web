@@ -1,0 +1,13 @@
+<div class="wrap">
+	<h2 class="wrap-heading">Code breaker</h2>
+
+	<form name="guessForm" ng-submit="guess(guessForm)">
+		<div class="form-group">
+			<input type="text" placeholder="Code" class="form-control" ng-model="assemption" />
+		</div>
+
+		<button class="btn btn-lg btn-primary btn-block" type="submit">Guess</button>
+	</form>
+</div>
+
+{{ game.attempts }}
