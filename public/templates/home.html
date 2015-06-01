@@ -1,33 +1,37 @@
-
 <div class="wrap">
-	<h2 class="wrap-heading">Code breaker</h2>
+	<h2 class="wrap-heading" ng-class="{'text-center' : game.gameover }">{{ game.gameover ? 'Game over' : 'Code Breaker' }}</h2>
+
+	<form name="guessForm" ng-submit="guess(guessForm)" class="game-form">
+		<div ng-if="!game.gameover">
+			<div class="form-group">
+				<input required autocomplete="off" type="text" placeholder="Code" class="form-control" ng-model="input.assemption" ng-pattern="/^[1-6]{4}$/" />
+			</div>
+
+			<button class="btn btn-lg btn-primary btn-block" type="submit" ng-disabled="guessForm.$invalid">Guess</button>
+		</div>
+
+		<div class="alert" ng-if="game.gameover" ng-class="{'alert-success' : game.won, 'alert-danger' : !game.won }">
+			{{ game.won ? 'You win!' : 'You lose...' }} <a href class="alert-link" ng-click="saveDialog()">save results?</a>
+		</div>
+
+		<div class="btn-group btn-group-justified action-bar">
+			<a href class="btn btn-lg btn-success btn-block" ng-click="newGame()">New Game</a>
+			<a href class="btn btn-lg btn-warning btn-block" ng-click="hint()" ng-if="game.hints_available && !game.gameover">Hint</a>
+		</div>
+	</form>
 
 	<ul class="list-group">
 		<li class="list-group-item list-group-item-info" ng-repeat="item in game.history">
 			<strong>Assumption</strong>: {{ item.assumption }}, <strong>result</strong>: {{ item.result || "Empty string" }}
 		</li>
 	</ul>
-
-	<form name="guessForm" ng-submit="guess(guessForm)">
-		<div class="form-group">
-			<input required autocomplete="off" type="text" placeholder="Code" class="form-control" ng-model="assemption" />
-		</div>
-
-		<button class="btn btn-lg btn-primary btn-block" type="submit">Guess</button>
-
-		<div class="btn-group btn-group-justified action-bar">
-			<a href class="btn btn-lg btn-success btn-block" ng-click="newGame()">New Game</a>
-			<a href class="btn btn-lg btn-warning btn-block" ng-click="hint()" ng-if="moreHints">Hint</a>
-		</div>
-	</form>
 </div>
 
-<div ng-if="game.hints.length" class="panel hints" ng-class="{ 'panel-warning': moreHints, 'panel-danger': !moreHints }">
+<div ng-if="game.hints.length" class="panel hints panel-warning">
 	<div class="panel-heading">
-		<span ng-if="moreHints">This numbers are inside of secret code!</span>
-		<span ng-if="!moreHints">No more hints</span>
+		This numbers are inside of secret code!
 	</div>
 	<div class="panel-body">
-		<span ng-repeat="item in game.hints" class="label label-warning">{{ item.hint }}</span>
+		<span ng-repeat="hint in game.hints track by $index" class="label label-warning">{{ hint }}</span>
 	</div>
 </div>

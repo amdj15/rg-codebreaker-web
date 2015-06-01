@@ -1,0 +1,26 @@
+<div class="wrap">
+	<h2 class="wrap-heading">Results</h2>
+
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Win</th>
+				<th>Attempts</th>
+				<th>Used hints</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="item in results track by $index" ng-class="{ success : item.win,  danger : !item.win }">
+				<td>{{ item.name }}</td>
+				<td>{{ item.win ? '+' : '-' }}</td>
+				<td>{{ item.attempts }}</td>
+				<td>{{ item.hints_used }}</td>
+			</tr>
+
+			<tr ng-if="!results.length">
+				<td colspan="4" class="text-center"><i>No available results</i></td>
+			</tr>
+		</tbody>
+	</table>
+</div>

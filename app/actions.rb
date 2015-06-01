@@ -10,7 +10,7 @@ class Actions < Ctrl
 
   def start req
     @@current_games.delete_if do |key, value|
-      value[:game].turns >= value[:game].attempts || (value[:started_at] + 1800) < Time.new.to_i
+      (value[:game].won? || value[:game].lost?) || (value[:started_at] + 1800) < Time.new.to_i
     end
 
     token = generate_token
@@ -22,31 +22,24 @@ class Actions < Ctrl
       :hints => []
     }
 
-    {token: token}.to_json
+    game_resource(token).to_json
   end
 
   def load req
-    {
-      :history => @@current_games[req.params["token"]][:history],
-      :hints =>  @@current_games[req.params["token"]][:hints],
-      :gameover => @@current_games[req.params["token"]][:game].won? || @@current_games[req.params["token"]][:game].lost?
-    }.to_json
+    game_resource(req.params["token"]).to_json
   end
 
   def guess req, assumption
     begin
       init_assemption = assumption.clone
-
-      response = {}
-      response["result"] = @@current_games[req.params["token"]][:game].guess(assumption)
-      response["assumption"] = init_assemption
+      result = @@current_games[req.params["token"]][:game].guess(assumption)
 
       @@current_games[req.params["token"]][:history] << {
-        :assumption => init_assemption,
-        :result => response["result"]
+          :assumption => init_assemption,
+          :result => result,
       }
 
-      response.to_json
+      game_resource(req.params["token"]).to_json
     rescue Exception => e
       [{:error => e}.to_json, 400]
     end
@@ -60,7 +53,7 @@ class Actions < Ctrl
     hint = @@current_games[req.params["token"]][:game].hint
     @@current_games[req.params["token"]][:hints] << hint if hint != nil
 
-    {:hint => hint }.to_json
+    game_resource(req.params["token"]).to_json
   end
 
   def results req
@@ -76,5 +69,16 @@ class Actions < Ctrl
   def access req
     return ["Bad request: token missed", 400] unless req.params["token"]
     return ["Bad request: invalid token", 400] unless @@current_games[req.params["token"]]
+  end
+
+  def game_resource token
+    {
+      :history => @@current_games[token][:history],
+      :hints =>  @@current_games[token][:hints],
+      :hints_available => @@current_games[token][:game].hints?,
+      :gameover => (@@current_games[token][:game].won? || @@current_games[token][:game].lost?),
+      :won => @@current_games[token][:game].won?,
+      :token => token,
+    }
   end
 end

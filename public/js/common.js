@@ -1,7 +1,8 @@
 (function(window, angular, undefined){
 	angular.module("codebreaker", [
 		'ngResource',
-		'ui.router'
+		'ui.router',
+		'ui.bootstrap'
 	]).config(function($stateProvider, $urlRouterProvider) {
 		$stateProvider.state("home", {
 			url: "/",
@@ -15,84 +16,78 @@
 
 		$urlRouterProvider.otherwise("/");
 
-	}).controller("home", function($scope, gameRsc){
-		var start = function() {
-			$scope.game = gameRsc.start();
-
-			$scope.game.$promise.then(function(){
-				$scope.game.history = [];
-				$scope.moreHints = true;
-
-				localStorage.setItem('token', $scope.game.token);
-			});
-
-			return $scope.game.$promise;
+	}).controller("home", function($scope, gameRsc, $modal){
+		var setStorage = function(data){
+			localStorage.setItem('token', data.token);
 		};
 
-		var load = function(token) {
-			$scope.game = gameRsc.load({
-				token: token
-			});
-
-			$scope.game.$promise.then(function(data){
-				$scope.game.token = token;
-				$scope.game.history = data.history;
-				$scope.game.hints = data.hints.map(function(item){ return { hint: item};});
-				$scope.game.win = data.win;
-
-				$scope.moreHints = true;
-			});
-
-			return $scope.game.$promise;
+		$scope.input = {
+			assemption: ''
 		};
-
-		// init game
-		if (localStorage.getItem('token')) {
-			load(localStorage.getItem('token')).catch(function(err){
-				start();
-			});
-		} else {
-			start();
-		}
 
 		$scope.guess = function(form) {
-			var attempt = gameRsc.guess({
-				token: $scope.game.token,
-				data: $scope.assemption
-			});
+			if (form.$invalid) {
+				return;
+			}
 
-			attempt.$promise.then(function(){
-				$scope.assemption = '';
-			}).catch(function(err){
-				console.warn(err);
+			$scope.game.$guess({
+				data: $scope.input.assemption
+			}).then(function(){
+				$scope.input.assemption  = '';
 			});
-
-			$scope.game.history.push(attempt);
 		};
 
 		$scope.newGame = function() {
-			start();
+			$scope.game.$start().then(setStorage);
 		};
 
 		$scope.hint = function() {
-			$scope.game.hints = $scope.game.hints || [];
+			$scope.game.$hint();
+		};
 
-			gameRsc.hint({
-				token: $scope.game.token
-			}).$promise.then(function(data){
-				if (!data.hint) {
-					$scope.moreHints = false;
+		$scope.saveDialog = function() {
+			$modal.open({
+				templateUrl: '/templates/save_modal.html',
+				controller: 'saveModal',
+				size: 'sm',
+				resolve: {
+					game: function() {
+						return $scope.game;
+					}
 				}
-
-				$scope.game.hints.push(data);
 			});
 		};
-	}).controller("results", function($scope){
 
-	}).factory('gameRsc',function($resource){
+		// init game
+		$scope.game = new gameRsc();
+
+		if (localStorage.getItem('token')) {
+			$scope.game.token = localStorage.getItem('token');
+			$scope.game.$load().catch(function(){
+				$scope.game.$start().then(setStorage);
+			});
+		} else {
+			$scope.game.$start().then(setStorage);
+		}
+	}).controller('saveModal', function($scope, game, $state){
+		$scope.name = '';
+
+		$scope.save = function() {
+			game.$save({
+				data: $scope.name
+			}).then(function(){
+				$state.go('results');
+				$scope.$close();
+			});
+		};
+	}).controller("results", function($scope, resultsRsc){
+		$scope.results = resultsRsc.query();
+	}).factory('gameRsc', function($resource){
 		return $resource(
 			"/game/:action/:data",
-			{},
+			{
+				token : "@token"
+			},
 			{
 				start: {
 					method: "GET",
@@ -117,8 +112,16 @@
 					params: {
 						action: "hint"
 					}
+				},
+				save: {
+					method: "GET",
+					params: {
+						action: "save"
+					}
 				}
 			}
 		);
+	}).factory('resultsRsc', function($resource){
+		return $resource('/results');
 	});
 })(window, angular);
