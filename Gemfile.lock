@@ -1,8 +1,8 @@
 GIT
   remote: https://github.com/amdj15/rg-codebreaker
-  revision: 324b9567be1c322bd85c451e6d2504b3501fdf8c
+  revision: 2e979081d5c8a1cde065fc657716fa99aee70470
   specs:
-    codebreaker (0.2.1)
+    codebreaker (0.5.0)
 
 GEM
   remote: https://rubygems.org/

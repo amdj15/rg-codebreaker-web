@@ -16,12 +16,44 @@
 		$urlRouterProvider.otherwise("/");
 
 	}).controller("home", function($scope, gameRsc){
-		$scope.title = "Yo, tititle";
+		var start = function() {
+			$scope.game = gameRsc.start();
 
-		$scope.game = gameRsc.start();
-		$scope.game.$promise.then(function(){
-			$scope.game.attempts = [];
-		});
+			$scope.game.$promise.then(function(){
+				$scope.game.history = [];
+				$scope.moreHints = true;
+
+				localStorage.setItem('token', $scope.game.token);
+			});
+
+			return $scope.game.$promise;
+		};
+
+		var load = function(token) {
+			$scope.game = gameRsc.load({
+				token: token
+			});
+
+			$scope.game.$promise.then(function(data){
+				$scope.game.token = token;
+				$scope.game.history = data.history;
+				$scope.game.hints = data.hints.map(function(item){ return { hint: item};});
+				$scope.game.win = data.win;
+
+				$scope.moreHints = true;
+			});
+
+			return $scope.game.$promise;
+		};
+
+		// init game
+		if (localStorage.getItem('token')) {
+			load(localStorage.getItem('token')).catch(function(err){
+				start();
+			});
+		} else {
+			start();
+		}
 
 		$scope.guess = function(form) {
 			var attempt = gameRsc.guess({
@@ -35,9 +67,26 @@
 				console.warn(err);
 			});
 
-			$scope.game.attempts.push(attempt);
+			$scope.game.history.push(attempt);
 		};
 
+		$scope.newGame = function() {
+			start();
+		};
+
+		$scope.hint = function() {
+			$scope.game.hints = $scope.game.hints || [];
+
+			gameRsc.hint({
+				token: $scope.game.token
+			}).$promise.then(function(data){
+				if (!data.hint) {
+					$scope.moreHints = false;
+				}
+
+				$scope.game.hints.push(data);
+			});
+		};
 	}).controller("results", function($scope){
 
 	}).factory('gameRsc',function($resource){
@@ -51,10 +100,22 @@
 						action: "start"
 					}
 				},
+				load: {
+					method: "GET",
+					params: {
+						action: "load"
+					}
+				},
 				guess: {
 					method: "GET",
 					params: {
 						action: "guess"
+					}
+				},
+				hint: {
+					method: "GET",
+					params: {
+						action: "hint"
 					}
 				}
 			}

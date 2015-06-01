@@ -44,3 +44,16 @@ body {
 	border-top-left-radius: 0;
 	border-top-right-radius: 0;
 }
+
+.wrap .action-bar {
+	margin-top: 5px;
+}
+
+.panel.hints {
+	position: fixed;
+	bottom: 0;
+}
+
+.panel.hints .label {
+	margin: 0 3px;
+}

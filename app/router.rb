@@ -3,6 +3,8 @@ class Router
     '/game/start' =>  'start',
     '/game/guess/:assemption' => 'guess',
     '/game/save/:name' => 'save',
+    '/game/load' => 'load',
+    '/game/hint' => 'hint',
     '/results' => 'results',
     '/' => 'main'
   }

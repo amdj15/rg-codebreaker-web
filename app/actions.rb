@@ -1,7 +1,7 @@
 class Actions < Ctrl
   @@current_games = {}
 
-  interceptors :access, [:guess, :save]
+  interceptors :access, [:guess, :save, :load, :hint]
 
   def main req
     path = Dir.pwd + '/tpls/index.html.erb'
@@ -9,10 +9,28 @@ class Actions < Ctrl
   end
 
   def start req
+    @@current_games.delete_if do |key, value|
+      value[:game].turns >= value[:game].attempts || (value[:started_at] + 1800) < Time.new.to_i
+    end
+
     token = generate_token
-    @@current_games[token] = Codebreaker::Game.new 3
+
+    @@current_games[token] = {
+      :game => Codebreaker::Game.new(5),
+      :history => [],
+      :started_at => Time.new.to_i,
+      :hints => []
+    }
 
     {token: token}.to_json
+  end
+
+  def load req
+    {
+      :history => @@current_games[req.params["token"]][:history],
+      :hints =>  @@current_games[req.params["token"]][:hints],
+      :gameover => @@current_games[req.params["token"]][:game].won? || @@current_games[req.params["token"]][:game].lost?
+    }.to_json
   end
 
   def guess req, assumption
@@ -20,8 +38,13 @@ class Actions < Ctrl
       init_assemption = assumption.clone
 
       response = {}
-      response["result"] = @@current_games[req.params["token"]].guess(assumption)
+      response["result"] = @@current_games[req.params["token"]][:game].guess(assumption)
       response["assumption"] = init_assemption
+
+      @@current_games[req.params["token"]][:history] << {
+        :assumption => init_assemption,
+        :result => response["result"]
+      }
 
       response.to_json
     rescue Exception => e
@@ -30,7 +53,14 @@ class Actions < Ctrl
   end
 
   def save req, name
-    @@current_games[req.params["token"]].save name
+    @@current_games[req.params["token"]][:game].save name
+  end
+
+  def hint req
+    hint = @@current_games[req.params["token"]][:game].hint
+    @@current_games[req.params["token"]][:hints] << hint if hint != nil
+
+    {:hint => hint }.to_json
   end
 
   def results req
@@ -41,8 +71,6 @@ class Actions < Ctrl
   def generate_token length = 64
     selection = [('a'..'z'), ('A'..'Z'), (1..9), ["_"]].map { |i| i.to_a }.flatten
     length.times.map { selection[rand(selection.length)] }.join
-
-    "IjqrAulD3V4UMOK1I1kuj9H8EUvZYAel3DEHOIdCKI97Er7h2TCYcuzE8h1avmI8"
   end
 
   def access req
