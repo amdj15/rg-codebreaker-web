@@ -16,7 +16,7 @@ class Actions < Ctrl
     token = generate_token
 
     @@current_games[token] = {
-      :game => Codebreaker::Game.new(5),
+      :game => Codebreaker::Game.new(10),
       :history => [],
       :started_at => Time.new.to_i,
       :hints => []
